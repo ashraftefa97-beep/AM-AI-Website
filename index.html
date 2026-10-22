@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AM AI — Robot Preview</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,"Segoe UI",sans-serif;background:#090b10;color:#f7f7fa}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 40%,#2b0c1a 0%,#090b10 65%)}
+main{width:min(95vw,680px);padding:28px;text-align:center}.brand{font-size:30px;font-weight:900;letter-spacing:4px}.brand span{color:#ff3558}
+.sub{color:#9da2ae;font-size:13px;letter-spacing:2px;margin:4px 0 22px}
+.robot{width:220px;height:220px;border-radius:45%;margin:0 auto 24px;position:relative;background:linear-gradient(140deg,#e8edf6,#77808f 28%,#121722 36%,#07080e 74%,#707989 92%);box-shadow:0 0 45px #f3263d33,inset 0 0 0 7px #bec4d2;display:grid;place-items:center;transition:transform .35s}
+.robot:before,.robot:after{content:"";position:absolute;top:90px;width:24px;height:48px;border-radius:16px;background:#aeb4bf;box-shadow:inset 0 0 0 5px #f3263d}.robot:before{right:-12px}.robot:after{left:-12px}
+.face{display:flex;gap:28px;align-items:center;justify-content:center;width:170px;height:120px;border-radius:40%;background:radial-gradient(#171d2a,#05060b);box-shadow:inset 0 0 22px #000}
+.eye{width:38px;height:38px;border:6px solid #ff3658;border-radius:50%;box-shadow:0 0 15px #ff315a;transition:all .3s}
+.robot[data-state="happy"] .eye,.robot[data-state="speaking"] .eye{height:22px;border-radius:50% 50% 0 0;border-bottom:0}
+.robot[data-state="thinking"] .eye{height:14px;border-radius:5px;transform:rotate(-15deg)}
+.robot[data-state="sleeping"] .eye{height:3px;border:0;background:#ff3658;border-radius:5px}
+.robot[data-state="focused"] .eye{height:16px;border-radius:4px;transform:rotate(12deg)}
+.robot[data-state="surprised"] .eye{width:44px;height:48px}
+.robot[data-state="error"] .eye{border-color:#ffb347;box-shadow:0 0 15px #ffb347}
+.robot[data-state="listening"]{animation:breathe 1.4s infinite alternate}
+.robot[data-state="speaking"]{animation:breathe .4s infinite alternate}
+@keyframes breathe{to{transform:scale(1.045);filter:brightness(1.2)}}
+.status{font-size:20px;font-weight:700;margin-bottom:6px}.hint{color:#9da2ae;font-size:14px;min-height:22px}
+.controls{display:flex;justify-content:center;gap:9px;flex-wrap:wrap;margin:24px auto}
+button{border:1px solid #4a2634;background:#171a22;color:#f8f8fa;padding:10px 15px;border-radius:12px;cursor:pointer;font:inherit}
+button[aria-pressed="true"]{background:#b91432;border-color:#f3263d}button:focus-visible{outline:3px solid #ff7790;outline-offset:2px}
+small{color:#8e95a4;display:block;margin-top:18px}
+@media(prefers-reduced-motion:reduce){.robot{animation:none!important;transition:none}.eye{transition:none}}
+</style></head>
+<body><main><div class="brand" dir="ltr">AM <span>AI</span></div><div class="sub">YOUR INTELLIGENT DESK COMPANION</div>
+<div class="robot" id="robot" data-state="idle" role="img" aria-label="روبوت AM AI في وضع الاستعداد"><div class="face"><div class="eye"></div><div class="eye"></div></div></div>
+<div class="status" id="status" aria-live="polite">جاهز للمساعدة</div><div class="hint" id="hint">واجهة تجريبية للتعبيرات — لا تتصل بميكروفون أو AI بعد</div>
+<div class="controls" id="controls"></div><button id="voice">تجربة الصوت الرجولي المتاح</button>
+<small>AM AI • UI prototype • يعمل دون اتصال بالإنترنت</small></main>
+<script>
+const states={idle:["استعداد","جاهز للمساعدة"],listening:["يستمع","أسمعك الآن"],thinking:["يفكر","لحظة، بفكر"],speaking:["يتحدث","أهلًا، أنا AM AI"],happy:["سعيد","يسعدني أساعدك"],surprised:["مندهش","دي مفاجأة!"],focused:["تركيز","مركز معاك"],error:["تنبيه","حصلت مشكلة"],sleeping:["نائم","في وضع السكون"]};
+const robot=document.getElementById('robot'),status=document.getElementById('status'),controls=document.getElementById('controls');
+for(const [key,[label]] of Object.entries(states)){const b=document.createElement('button');b.textContent=label;b.type='button';b.dataset.state=key;b.onclick=()=>setState(key);controls.append(b)}
+function setState(s){if(!states[s])return;robot.dataset.state=s;robot.setAttribute('aria-label','روبوت AM AI: '+states[s][0]);status.textContent=states[s][1];for(const b of controls.children)b.setAttribute('aria-pressed',String(b.dataset.state===s))}
+setState('idle');
+document.getElementById('voice').onclick=()=>{if(!('speechSynthesis'in window)){status.textContent='الصوت غير مدعوم في المتصفح';return}
+speechSynthesis.cancel();const u=new SpeechSynthesisUtterance('أهلا بيك، أنا إيه إم إيه آي، مساعدك الذكي');u.lang='ar-EG';u.rate=.9;
+const voices=speechSynthesis.getVoices();const arabic=voices.filter(v=>v.lang.toLowerCase().startsWith('ar'));const male=arabic.find(v=>/male|hossam|maged|tarik|hamdan|naayf/i.test(v.name));u.voice=male||arabic[0]||null;
+setState('speaking');u.onend=()=>setState('idle');u.onerror=()=>{setState('error');document.getElementById('hint').textContent='تعذر تشغيل الصوت؛ جرّب تثبيت صوت عربي في النظام'};speechSynthesis.speak(u)};
+</script></body></html>
